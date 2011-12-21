@@ -374,30 +374,20 @@ if(typeof FastList === 'function') {
         continue;
 
         case S.STRING:
-          // thanks thejh, this is an about 50% performance improvment.
-          var starti              = i
-            , consecutive_slashes = 0
-            ;
-          while (c) {
-            // if it seems like end of string
-            // and we found slashes before
-            // and those slashes an even number
-            // -> this is not an escape its the end of the string
-            if (c === '"' && 
-               (consecutive_slashes === 0 || consecutive_slashes%2 ===0)) {
-              parser.state = parser.stack.pop() || S.VALUE;
-              break;
+               if (c === '"')  parser.state = parser.stack.pop() || S.VALUE;
+          else if (c === '\\') parser.state = S.BACKSLASH; 
+          else                 parser.textNode += c;
+        continue;
+
+        case S.BACKSLASH:
+          if (c==='\\' || c === '"') parser.textNode += c;
+          else {
+            if(p==='\\') {
+              parser.textNode += '\\';
             }
-            if (c === '\\') consecutive_slashes++;
-            else            consecutive_slashes = 0;
-            parser.position ++;
-            if (c === "\n") {
-              parser.line ++;
-              parser.column = 0;
-            } else parser.column ++;
-            c = chunk.charAt(i++);
+            parser.textNode += c;
           }
-          parser.textNode += chunk.substring(starti, i-1);
+          parser.state = S.STRING;
         continue;
 
         case S.TRUE:
