@@ -136,7 +136,7 @@ if(typeof FastList === 'function') {
     parser.state    = S.BEGIN;
     parser.stack    = new fastlist();
     // mostly just for error reporting
-    parser.position = parser.column = 0;
+    parser.position = parser.column = parser.deep = 0;
     parser.line     = 1;
     emit(parser, "onready");
   }
@@ -302,7 +302,10 @@ if(typeof FastList === 'function') {
               emit(parser, 'oncloseobject');
               parser.state = parser.stack.pop() || S.VALUE;
               continue;
-            } else  parser.stack.push(S.CLOSE_OBJECT);
+            } else  {
+              parser.deep++;
+              parser.stack.push(S.CLOSE_OBJECT);
+            }
           }
           if(c === '"') parser.state = S.STRING;
           else error(parser, "Malformed object key should start with \"");
@@ -319,6 +322,7 @@ if(typeof FastList === 'function') {
             } else closeValue(parser, 'onkey');
             parser.state  = S.VALUE;
           } else if (c==='}') {
+            parser.deep--;
             emitNode(parser, 'oncloseobject');
             parser.state = parser.stack.pop() || S.VALUE;
           } else if(c===',') {
@@ -340,6 +344,7 @@ if(typeof FastList === 'function') {
               parser.state = parser.stack.pop() || S.VALUE;
               continue;
             } else {
+              parser.deep++;
               parser.stack.push(S.CLOSE_ARRAY);
             }
           }
@@ -366,6 +371,7 @@ if(typeof FastList === 'function') {
             closeValue(parser, 'onvalue');
             parser.state  = S.VALUE;
           } else if (c===']') {
+            parser.deep--;
             emitNode(parser, 'onclosearray');
             parser.state = parser.stack.pop() || S.VALUE;
           } else if (c === '\r' || c === '\n' || c === ' ' || c === '\t')
