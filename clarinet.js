@@ -216,7 +216,7 @@ if(typeof FastList === 'function') {
   };
 
   function emit(parser, event, data) {
-    if(clarinet.INFO) console.log('-- emit', event, data);
+    if(clarinet.INFO) console.log('-- emit', event, data, parser.deep);
     if (parser[event]) parser[event](data);
   }
 
