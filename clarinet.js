@@ -277,7 +277,9 @@ if(typeof FastList === 'function') {
 
       if(!c) break;
 
-      if (clarinet.DEBUG) console.log(i,c,clarinet.STATE[parser.state],p,parser.deep);
+      if (clarinet.DEBUG) 
+        console.log(i,c,clarinet.STATE[parser.state],parser.deep);
+
       parser.position ++;
       if (c === "\n") {
         parser.line ++;
@@ -385,6 +387,9 @@ if(typeof FastList === 'function') {
             , consecutive_slashes = 0
             ;
           while (c) {
+            if (clarinet.DEBUG) 
+              console.log(i,c,clarinet.STATE[parser.state],parser.deep);
+
             // if it seems like end of string
             // and we found slashes before
             // and those slashes an even number
