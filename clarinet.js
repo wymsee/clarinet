@@ -13,7 +13,7 @@ if(typeof FastList === 'function') {
   try { fastlist = require('fast-list'); } catch (exc) { fastlist = Array; }
 } else fastlist = Array;
 
-  clarinet.parser            = function (opt) { return new CParser(opt);};
+  clarinet.parser            = function (opt) { return new CParser(opt); };
   clarinet.CParser           = CParser;
   clarinet.CStream           = CStream;
   clarinet.createStream      = createStream;
@@ -50,7 +50,6 @@ if(typeof FastList === 'function') {
     , CLOSE_ARRAY                       : S++ // ]
     , TEXT_ESCAPE                       : S++ // \ stuff
     , STRING                            : S++ // ""
-    , BACKSLASH                         : S++
     , END                               : S++ // No more stack
     , OPEN_KEY                          : S++ // , "a"
     , CLOSE_KEY                         : S++ // :
@@ -138,6 +137,10 @@ if(typeof FastList === 'function') {
     // mostly just for error reporting
     parser.position = parser.column = parser.deep = 0;
     parser.line     = 1;
+    if(parser.opt.only && typeof parser.opt.only === 'string')
+      parser.opt.only   = [parser.opt.only];
+    if(parser.opt.except && typeof parser.opt.except === 'string')
+      parser.opt.except = [parser.opt.except];
     emit(parser, "onready");
   }
 
@@ -227,7 +230,8 @@ if(typeof FastList === 'function') {
 
   function closeValue(parser, event) {
     parser.textNode = textopts(parser.opt, parser.textNode);
-    if (parser.textNode) emit(parser, (event ? event : "onvalue"), parser.textNode);
+    if (parser.textNode) 
+      emit(parser, (event ? event : "onvalue"), parser.textNode);
     parser.textNode = "";
   }
 
