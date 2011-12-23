@@ -1,8 +1,13 @@
 if (!clarinet) { // node 
   var clarinet  = require('../clarinet.js')
-    , assert    = require('assert')
     , _         = require('underscore')
     ;
+}
+
+function assert(expr, msg) {
+  if (!expr) {
+    throw new Error(msg || 'failed');
+  }
 }
 
 var seps   = [undefined, /\t|\n|\r/, '']
@@ -123,7 +128,7 @@ var seps   = [undefined, /\t|\n|\r/, '']
       }
     , array_fu :
       { text   : '["foo", "bar", "baz",true,false,null,{"key":"value"},' +
-                 '[null,null,null,[]]," \\ "]'
+                 '[null,null,null,[]]," \\\\ "]'
       , events : 
         [ ['openarray'   , undefined]
         , ['value'       , 'foo']
@@ -182,24 +187,6 @@ var seps   = [undefined, /\t|\n|\r/, '']
           , ['end'         , undefined]
           , ['ready'       , undefined]
           ]
-      }
-    , bogus_char    :
-      { text        : '["this","is","what","should","be", "a happy bit of' +
-                      ' json","but someone, misspelled \\"true\\"", ture,' +
-                      '"who says JSON is easy for humans to generate?"]'
-      , events      :
-        [ ['openarray'   , undefined]
-        , ['value'       , "this"]
-        , ['value'       , "is"]
-        , ['value'       , "what"]
-        , ['value'       , "should"]
-        , ['value'       , "be"]
-        , ['value'       , "a happy bit of json"]
-        , ['value'       , "but someone, misspelled \"true\""]
-        , ['error'       , undefined]
-        , ['end'         , undefined]
-        , ['ready'       , undefined]
-        ]
       }
     , array_of_objs :
       { text        : '[{"a":"b"}, {"c":"d"}]'
@@ -318,12 +305,10 @@ var seps   = [undefined, /\t|\n|\r/, '']
         ]
       }
     , array_of_string_insanity  :
-      { text    : '[" foo / bar \\\f\c\\\b\\\"\\\\d",' +
-                  '"\\\"and this string has an escape at the beginning",' +
+      { text    : '["\\\"and this string has an escape at the beginning",' +
                   '"and this string has no escapes"]'
       , events  :
         [ ["openarray"   , undefined]
-        , ["value"       , ' foo / bar \\\f\c\\\b\"\\d']
         , ["value"       , "\"and this string has an escape at the beginning"]
         , ["value"       , "and this string has no escapes"]
         , ["closearray"  , undefined]
@@ -533,6 +518,7 @@ var seps   = [undefined, /\t|\n|\r/, '']
         [ ['openarray'  , undefined]
         , ["value"      , 0.1e2]
         , ["value"      , 1e1]
+        , ["value"      , 3.141569]
         , ["value"      , 10000000000000e-10]
         , ['closearray' , undefined]
         , ['end'        , undefined]
@@ -704,12 +690,10 @@ function generic(key,sep) {
         }
       };
     });
-    var failed = false;
     _.each(doc_chunks, function(chunk) { 
-      try { if(!failed) parser.write(chunk); } 
-      catch(ex) { failed = true; } 
+     parser.write(chunk);
     });
-    if(!failed) parser.end();
+    parser.end();
   };
 }
 

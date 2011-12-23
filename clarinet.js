@@ -129,7 +129,7 @@ if(typeof FastList === 'function') {
     var parser = this;
     clearBuffers(parser);
     parser.bufferCheckPosition = clarinet.MAX_BUFFER_LENGTH;
-    parser.q        = parser.c = "";
+    parser.q        = parser.c = parser.p = "";
     parser.opt      = opt || {};
     parser.closed   = parser.closedRoot = parser.sawRoot = false;
     parser.tag      = parser.error = null;
@@ -270,16 +270,22 @@ if(typeof FastList === 'function') {
     if (parser.closed) return error(parser,
       "Cannot write after close. Assign an onready handler.");
     if (chunk === null) return end(parser);
-    var i = 0, c = chunk[0];
+    var i = 0, c = chunk[0], p = parser.p;
     if (clarinet.DEBUG) console.log('write -> [' + chunk + ']');
     while (c) {
+      p = c;
       parser.c = c = chunk.charAt(i++);
+      // if chunk doesnt have next, like streaming char by char
+      // this way we need to check if previous is really previous
+      // if not we need to reset to what the parser says is the previous
+      // from buffer
+      if(p !== c ) parser.p = p;
+      else p = parser.p;
 
       if(!c) break;
 
       if (clarinet.DEBUG) 
         console.log(i,c,clarinet.STATE[parser.state],parser.deep);
-
       parser.position ++;
       if (c === "\n") {
         parser.line ++;
@@ -382,14 +388,14 @@ if(typeof FastList === 'function') {
         continue;
 
         case S.STRING:
-          // thanks thejh, this is an about 50% performance improvment.
-          var starti              = i
-            , consecutive_slashes = 0
+          // thanks thejh, this is an about 50% performance improvement.
+          var starti              = i-1
+            , consecutive_slashes = parser.consecutive_slashes || 0
+            , gaps                = new fastlist()
             ;
           while (c) {
             if (clarinet.DEBUG) 
               console.log(i,c,clarinet.STATE[parser.state],parser.deep);
-
             // if it seems like end of string
             // and we found slashes before
             // and those slashes an even number
@@ -399,8 +405,15 @@ if(typeof FastList === 'function') {
               parser.state = parser.stack.pop() || S.VALUE;
               break;
             }
-            if (c === '\\') consecutive_slashes++;
-            else            consecutive_slashes = 0;
+            if (c === '\\') { 
+              consecutive_slashes++;
+              if(consecutive_slashes !== 0 && consecutive_slashes%2 !==0)
+                gaps.push(i-1);
+            }
+            else {
+              consecutive_slashes = 0;
+            }
+            parser.consecutive_slashes = consecutive_slashes;
             parser.position ++;
             if (c === "\n") {
               parser.line ++;
@@ -408,7 +421,15 @@ if(typeof FastList === 'function') {
             } else parser.column ++;
             c = chunk.charAt(i++);
           }
-          parser.textNode += chunk.substring(starti, i-1);
+          var e    = gaps.shift()
+            , s    = starti
+            ;
+          while(typeof e === 'number') {
+            parser.textNode += chunk.slice(s, e);
+            s                = e+1;
+            e                = gaps.shift();
+          }
+          parser.textNode += chunk.substring(s, i-1);
         continue;
 
         case S.TRUE:
