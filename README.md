@@ -104,10 +104,7 @@ settings supported:
 * `trim` - boolean. whether or not to trim text and comment nodes.
 * `normalize` - boolean. if true, then turn any whitespace into a single
   space.
-* `only` - string or array of strings. specify paths that should be parsed, ignore all others
-  , e.g. `music.genre[0]`
-* `except` - string or array of strings.  specify paths that should be ignored
-  , e.g. `music.duration`
+* `select` - string. specify the path that should be parsed, ignore all others, e.g. `music.genre[0]`
 
 ## methods
 

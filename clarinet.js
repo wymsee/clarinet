@@ -4,9 +4,12 @@
     , fastlist
     ;
 
+// to set debugging
 if(typeof process === 'object' && process.env) env = process.env;
 else env = window;
 
+// use fastlist if fastlist is available
+// fastlist is basically a crippled array that performs faster
 if(typeof FastList === 'function') {
   fastlist = FastList;
 } else if (typeof require === 'function') {
@@ -33,6 +36,8 @@ if(typeof FastList === 'function') {
     , "ready"
     ];
 
+  // buffer names, not the actual buffers. actual buffers are sorted in the
+  // parser
   var buffers     = [ "textNode", "numberNode" ]
     , streamWraps = clarinet.EVENTS.filter(function (ev) {
           return ev !== "error" && ev !== "end";
@@ -67,11 +72,13 @@ if(typeof FastList === 'function') {
     , NUMBER_DIGIT                      : S++ // [0-9]    
     };
 
+  // creates the 0 -> BEGIN association in clarinet.STATE (2 way lookup)
   for (var s_ in clarinet.STATE) clarinet.STATE[clarinet.STATE[s_]] = s_;
 
-  // switcharoo
+  // shortcut, reusing variable
   S = clarinet.STATE;
 
+  // if this doesnt exist
   if (!Object.create) {
     Object.create = function (o) {
       function f () { this["__proto__"] = o; }
@@ -80,12 +87,14 @@ if(typeof FastList === 'function') {
     };
   }
 
+  // or this doesnt exist
   if (!Object.getPrototypeOf) {
     Object.getPrototypeOf = function (o) {
       return o["__proto__"];
     };
   }
 
+  // or this, then create the artifacts
   if (!Object.keys) {
     Object.keys = function (o) {
       var a = [];
@@ -94,6 +103,7 @@ if(typeof FastList === 'function') {
     };
   }
 
+  // avoid buffering too much and hogging too much memory in your buffers
   function checkBufferLength (parser) {
     var maxAllowed = Math.max(clarinet.MAX_BUFFER_LENGTH, 10)
       , maxActual = 0
@@ -116,31 +126,64 @@ if(typeof FastList === 'function') {
                                + parser.position;
   }
 
+  // clear all buffers
   function clearBuffers (parser) {
     for (var i = 0, l = buffers.length; i < l; i ++) {
       parser[buffers[i]] = "";
     }
   }
 
+  // create a new parser
   function CParser (opt) {
     if (!(this instanceof CParser)) return new CParser (opt);
 
-    var parser = this;
+    var parser = this
+      ;
     clearBuffers(parser);
-    parser.bufferCheckPosition = clarinet.MAX_BUFFER_LENGTH;
     parser.q        = parser.c = parser.p = "";
     parser.opt      = opt || {};
-    parser.closed   = parser.closedRoot = parser.sawRoot = false;
-    parser.tag      = parser.error = null;
+    // undocumented for now, just in case someone asks for this
+    parser.bufferCheckPosition = 
+      parser.opt.bufferCheckPosition || clarinet.MAX_BUFFER_LENGTH;
+    // is the parser closed?
+    parser.closed   = false;
+    parser.error    = null;
     parser.state    = S.BEGIN;
+    // stack is a fast list cause we only push and shift
+    // if fastlist is not available it will be a normal array
+    // which also can push and shift
     parser.stack    = new fastlist();
-    // mostly just for error reporting
+    // deep counts the stack level, increments when you enter
+    // a object or array and decrements when you leave and object or array
+    // this is used by the `only` and `except` functionality
     parser.position = parser.column = parser.deep = 0;
+    // start on line 1, 0 didn't match with text editors
     parser.line     = 1;
-    if(parser.opt.only && typeof parser.opt.only === 'string')
-      parser.opt.only   = [parser.opt.only];
-    if(parser.opt.except && typeof parser.opt.except === 'string')
-      parser.opt.except = [parser.opt.except];
+    if(typeof parser.opt.select === 'string') {
+      var index  = []
+        , select = parser.opt.select
+        ;
+      if(select.indexOf('.') !== -1) {
+        select.split('.').forEach(function (e){
+          if(/\[\d+\]/.test(e))
+            // array, position n
+            index.push(['a', e.replace(/\[(\d+)\]/, "$1")]);
+          // else if its an wildcard level
+          else if (e === '*')
+            index.push(['*']);
+          // else its an object key
+          else if(e !== '')
+            index.push(['k', e]);
+        });
+      } else {
+        if(/\[\d+\]/.test(select))
+          index.push(['a', select.replace(/\[(\d+)\]/, "$1")]);
+        else
+          index.push(['k', select]);
+      }
+      parser.opt.select = index;
+    }
+    parser.opt.select = parser.opt.select || [];
     emit(parser, "onready");
   }
 
