@@ -161,7 +161,7 @@ if(typeof FastList === 'function') {
     // start on line 1, 0 didn't match with text editors
     parser.line     = 1;
     // sets the ignore to zero
-    parser.ignore   = Number.MAX_VALUE;
+    parser.ignore   = null;
     if(typeof parser.opt.select === 'string') {
       var index  = []
         , select = parser.opt.select
@@ -283,17 +283,15 @@ if(typeof FastList === 'function') {
 
   function closeKey(parser, event) {
     var sel = parser.opt.select[parser.deep-1];
+    parser.state  = S.VALUE;
     if(typeof sel !== 'undefined') {
       if (!(sel[0] === 'k' && sel[1] === parser.textNode)) {
         parser.textNode = "";
         parser.ignore   = parser.deep;
         parser.state    = S.IGNORE;
         return;
-      }
-    // else we emit and continue
-    closeValue(parser, event);
-    parser.state  = S.VALUE;
-    }
+      } else parser.textNode = "";
+    } else closeValue(parser, event);
   }
 
   function closeNumber(parser) {
@@ -395,7 +393,8 @@ if(typeof FastList === 'function') {
             } else closeKey(parser, 'onkey');
           } else if (c==='}') {
             parser.deep--;
-            emitNode(parser, 'oncloseobject');
+            if(parser.ignore === null || parser.deep >= parser.ignore)
+              emitNode(parser, 'oncloseobject');
             parser.state = parser.stack.pop() || S.VALUE;
           } else if(c===',') {
             if(parser.state === S.CLOSE_OBJECT)
@@ -444,7 +443,8 @@ if(typeof FastList === 'function') {
             parser.state  = S.VALUE;
           } else if (c===']') {
             parser.deep--;
-            emitNode(parser, 'onclosearray');
+            if(parser.ignore === null || parser.deep >= parser.ignore)
+              emitNode(parser, 'onclosearray');
             parser.state = parser.stack.pop() || S.VALUE;
           } else if (c === '\r' || c === '\n' || c === ' ' || c === '\t')
               continue;

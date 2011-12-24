@@ -10,7 +10,7 @@ function assert(expr, msg) {
   }
 }
 
-var seps   = [undefined]//[undefined, /\t|\n|\r/, '']
+var seps   = [undefined, /\t|\n|\r/, '']
   , sep
   , sels   =
     { simplest:
@@ -18,14 +18,15 @@ var seps   = [undefined]//[undefined, /\t|\n|\r/, '']
           '{"a": {"b": {"c": true}, "c": null}, "b": [1,2,{"c":false}]}'
       , select : 'b'
       , events :
-        [ ['openarray'  , undefined]
-        , ['value'      , 1]
-        , ['value'      , 2]
-        , ['openobject' , 'c']
-        , ['value'      , false]
-        , ['closearray' , undefined]
-        , ['end'        , undefined]
-        , ['ready'      , undefined]
+        [ ['openarray'   , undefined]
+        , ['value'       , 1]
+        , ['value'       , 2]
+        , ['openobject'  , 'c']
+        , ['value'       , false]
+        , ['closeobject' , undefined]
+        , ['closearray'  , undefined]
+        , ['end'         , undefined]
+        , ['ready'       , undefined]
         ]
       }
     }
@@ -718,23 +719,22 @@ function generic(key,sep,tests) {
   };
 }
 
-//describe('clarinet', function(){
-//  describe('#generic', function() {
-//    for (var key in docs) {
-//      if (docs.hasOwnProperty(key)) {
-//        // undefined means no split
-//        // /\t|\n|\r| / means on whitespace
-//        // '' means on every char
-//        for(var i in seps) {
-//          sep = seps[i];
-//          it('[' + key + '] should be able to parse -> ' + sep,
-//            generic(key,sep, docs));
-//        }
-//      }
-//    }
-//  });
-//});
-
+describe('clarinet', function(){
+  describe('#generic', function() {
+    for (var key in docs) {
+      if (docs.hasOwnProperty(key)) {
+        // undefined means no split
+        // /\t|\n|\r| / means on whitespace
+        // '' means on every char
+        for(var i in seps) {
+          sep = seps[i];
+          it('[' + key + '] should be able to parse -> ' + sep,
+            generic(key,sep, docs));
+        }
+      }
+    }
+  });
+});
 
 describe('clarinet', function(){
   describe('#select', function() {
