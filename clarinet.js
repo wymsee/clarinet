@@ -69,7 +69,8 @@ if(typeof FastList === 'function') {
     , NULL2                             : S++ // l
     , NULL3                             : S++ // l
     , NUMBER_DECIMAL_POINT              : S++ // .
-    , NUMBER_DIGIT                      : S++ // [0-9]    
+    , NUMBER_DIGIT                      : S++ // [0-9]
+    , IGNORE                            : S++
     };
 
   // creates the 0 -> BEGIN association in clarinet.STATE (2 way lookup)
@@ -159,6 +160,8 @@ if(typeof FastList === 'function') {
     parser.position = parser.column = parser.deep = 0;
     // start on line 1, 0 didn't match with text editors
     parser.line     = 1;
+    // sets the ignore to zero
+    parser.ignore   = Number.MAX_VALUE;
     if(typeof parser.opt.select === 'string') {
       var index  = []
         , select = parser.opt.select
@@ -278,6 +281,21 @@ if(typeof FastList === 'function') {
     parser.textNode = "";
   }
 
+  function closeKey(parser, event) {
+    var sel = parser.opt.select[parser.deep-1];
+    if(typeof sel !== 'undefined') {
+      if (!(sel[0] === 'k' && sel[1] === parser.textNode)) {
+        parser.textNode = "";
+        parser.ignore   = parser.deep;
+        parser.state    = S.IGNORE;
+        return;
+      }
+    // else we emit and continue
+    closeValue(parser, event);
+    parser.state  = S.VALUE;
+    }
+  }
+
   function closeNumber(parser) {
     if (parser.numberNode) 
       emit(parser, "onvalue", parseFloat(parser.numberNode));
@@ -373,9 +391,8 @@ if(typeof FastList === 'function') {
           if(c===':') {
             if(parser.state === S.CLOSE_OBJECT) {
               parser.stack.push(S.CLOSE_OBJECT);
-              closeValue(parser, 'onopenobject');
-            } else closeValue(parser, 'onkey');
-            parser.state  = S.VALUE;
+              closeKey(parser, 'onopenobject');
+            } else closeKey(parser, 'onkey');
           } else if (c==='}') {
             parser.deep--;
             emitNode(parser, 'oncloseobject');
@@ -572,6 +589,16 @@ if(typeof FastList === 'function') {
             i--; // go back one
             parser.state = parser.stack.pop() || S.VALUE;
           }
+        continue;
+
+        case S.IGNORE:
+          if(c==='{' || c==='[')
+            parser.deep++;
+          else if(c===']' || c==='}')
+            parser.deep--;
+          else continue;
+          if(parser.deep > parser.ignore) continue;
+          else parser.state = parser.stack.pop() || S.VALUE;
         continue;
 
         default:

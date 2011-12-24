@@ -10,8 +10,25 @@ function assert(expr, msg) {
   }
 }
 
-var seps   = [undefined, /\t|\n|\r/, '']
+var seps   = [undefined]//[undefined, /\t|\n|\r/, '']
   , sep
+  , sels   =
+    { simplest:
+      { text   : 
+          '{"a": {"b": {"c": true}, "c": null}, "b": [1,2,{"c":false}]}'
+      , select : 'b'
+      , events :
+        [ ['openarray'  , undefined]
+        , ['value'      , 1]
+        , ['value'      , 2]
+        , ['openobject' , 'c']
+        , ['value'      , false]
+        , ['closearray' , undefined]
+        , ['end'        , undefined]
+        , ['ready'      , undefined]
+        ]
+      }
+    }
   , docs   =
     { empty_array :
       { text      : '[]'
@@ -660,18 +677,22 @@ var seps   = [undefined, /\t|\n|\r/, '']
       }
     };
 
-function generic(key,sep) {
+function generic(key,sep,tests) {
   return function () {
-    var doc        = docs[key].text
-      , events     = docs[key].events
+    var doc        = tests[key].text
+      , events     = tests[key].events
+      , select     = tests[key].select
       , l          = typeof FastList === 'function' ? new FastList() : []
       , doc_chunks = doc.split(sep)
-      , parser     = clarinet.parser()
+      , parser
       , i          = 0
       , current
       , env = process && process.env ? process.env : window
       , record     = []
       ;
+
+    if(select) { parser = clarinet.parser({select: select}); }
+          else { parser = clarinet.parser(); }
 
     _.each(events, function(event_pair) { l.push(event_pair); });
     _.each(clarinet.EVENTS, function(event) {
@@ -697,17 +718,32 @@ function generic(key,sep) {
   };
 }
 
+//describe('clarinet', function(){
+//  describe('#generic', function() {
+//    for (var key in docs) {
+//      if (docs.hasOwnProperty(key)) {
+//        // undefined means no split
+//        // /\t|\n|\r| / means on whitespace
+//        // '' means on every char
+//        for(var i in seps) {
+//          sep = seps[i];
+//          it('[' + key + '] should be able to parse -> ' + sep,
+//            generic(key,sep, docs));
+//        }
+//      }
+//    }
+//  });
+//});
+
+
 describe('clarinet', function(){
-  describe('#generic', function() {
-    for (var key in docs) {
-      if (docs.hasOwnProperty(key)) {
-        // undefined means no split
-        // /\t|\n|\r| / means on whitespace
-        // '' means on every char
+  describe('#select', function() {
+    for (var key in sels) {
+      if (sels.hasOwnProperty(key)) {
         for(var i in seps) {
           sep = seps[i];
           it('[' + key + '] should be able to parse -> ' + sep,
-            generic(key,sep));
+            generic(key,sep, sels));
         }
       }
     }
