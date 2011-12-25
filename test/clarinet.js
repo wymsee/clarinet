@@ -10,7 +10,7 @@ function assert(expr, msg) {
   }
 }
 
-var seps   = [undefined]// [undefined, /\t|\n|\r/, '']
+var seps   = [undefined, /\t|\n|\r/, '']
   , sep
   , sels   =
     { one_step:
@@ -52,6 +52,15 @@ var seps   = [undefined]// [undefined, /\t|\n|\r/, '']
     , empty_object:
       { text   : 
           '{}'
+      , select : 'a'
+      , events :
+        [ ['end'         , undefined]
+        , ['ready'       , undefined]
+        ]
+      }
+    , empty_array:
+      { text   : 
+          '[]'
       , select : 'a'
       , events :
         [ ['end'         , undefined]

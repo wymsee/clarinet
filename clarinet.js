@@ -268,7 +268,7 @@ if(typeof FastList === 'function') {
 
   function emit(parser, event, data) {
     if(clarinet.INFO) console.log('-- emit', event, data, parser.deep);
-    if (parser[event]) parser[event](data);
+    if (parser.deep >= parser.ignore && parser[event]) parser[event](data);
   }
 
   function emitNode(parser, event, data) {
@@ -382,10 +382,8 @@ if(typeof FastList === 'function') {
           if(parser.state === S.OPEN_KEY) parser.stack.push(S.CLOSE_KEY);
           else {
             if(c === '}') {
-              if(parser.ignore === null || parser.deep >= parser.ignore) {
-                emit(parser, 'onopenobject');
-                emit(parser, 'oncloseobject');
-              }
+              emit(parser, 'onopenobject');
+              emit(parser, 'oncloseobject');
               parser.state = parser.stack.pop() || S.VALUE;
               continue;
             } else  {
@@ -409,9 +407,8 @@ if(typeof FastList === 'function') {
           } else if (c==='}') {
             parser.deep--;
             parser.state = parser.stack.pop() || S.VALUE;
-            if(parser.ignore === null || parser.deep >= parser.ignore)
-              emitNode(parser, 'oncloseobject');
-            else if (parser.deep < parser.ignore)
+            emitNode(parser, 'oncloseobject');
+            if (parser.deep < parser.ignore)
               parser.state = S.IGNORE;
           } else if(c===',') {
             if(parser.state === S.CLOSE_OBJECT)
@@ -460,8 +457,7 @@ if(typeof FastList === 'function') {
             parser.state  = S.VALUE;
           } else if (c===']') {
             parser.deep--;
-            if(parser.ignore === null || parser.deep >= parser.ignore)
-              emitNode(parser, 'onclosearray');
+            emitNode(parser, 'onclosearray');
             parser.state = parser.stack.pop() || S.VALUE;
           } else if (c === '\r' || c === '\n' || c === ' ' || c === '\t')
               continue;
