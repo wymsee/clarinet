@@ -187,6 +187,8 @@ if(typeof FastList === 'function') {
       parser.opt.select = index;
     }
     parser.opt.select = parser.opt.select || [];
+    if(parser.opt.select.length > 0)
+      parser.ignore   = parser.opt.select.length;
     emit(parser, "onready");
   }
 
@@ -288,7 +290,7 @@ if(typeof FastList === 'function') {
     parser.state  = S.VALUE;
     // if they defined a selector
     if(typeof sel !== 'undefined') {
-      // oif it doesnt match the current level
+      // if it doesnt match the current level
       // parser.opt.select[parser.deep] !== 'undefined' ||
       if (!(sel[0] === 'k' && sel[1] === parser.textNode)) {
         parser.textNode = "";
@@ -299,9 +301,6 @@ if(typeof FastList === 'function') {
         // if there is a level after we can pretty much disregard
         // this one as the user only wants you to issue the last
         // step of the path expression
-//        if(parser.opt.select[parser.deep] !== 'undefined')
-  //        alert('a');
-        parser.ignore   = parser.deep;
         parser.textNode = "";
       }
     } else closeValue(parser, event);
@@ -383,8 +382,10 @@ if(typeof FastList === 'function') {
           if(parser.state === S.OPEN_KEY) parser.stack.push(S.CLOSE_KEY);
           else {
             if(c === '}') {
-              emit(parser, 'onopenobject');
-              emit(parser, 'oncloseobject');
+              if(parser.ignore === null || parser.deep >= parser.ignore) {
+                emit(parser, 'onopenobject');
+                emit(parser, 'oncloseobject');
+              }
               parser.state = parser.stack.pop() || S.VALUE;
               continue;
             } else  {

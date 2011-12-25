@@ -13,7 +13,7 @@ function assert(expr, msg) {
 var seps   = [undefined]// [undefined, /\t|\n|\r/, '']
   , sep
   , sels   =
-    { simplest:
+    { one_step:
       { text   : 
           '{"a": {"b": {"c": true}, "c": null}, "b": [1,2,{"c":false}]}'
       , select : 'b'
@@ -29,7 +29,7 @@ var seps   = [undefined]// [undefined, /\t|\n|\r/, '']
         , ['ready'       , undefined]
         ]
       }
-    , two_keys:
+    , two_steps:
       { text   : 
           '{"a": {"b": {"c": true}, "c": null}, "b": {"d": null, "c":false}}'
       , select : 'b.c'
@@ -46,6 +46,15 @@ var seps   = [undefined]// [undefined, /\t|\n|\r/, '']
       , events :
         [ ['value'       , "foo"]
         , ['end'         , undefined]
+        , ['ready'       , undefined]
+        ]
+      }
+    , empty_object:
+      { text   : 
+          '{}'
+      , select : 'a'
+      , events :
+        [ ['end'         , undefined]
         , ['ready'       , undefined]
         ]
       }
@@ -739,22 +748,22 @@ function generic(key,sep,tests) {
   };
 }
 
-//describe('clarinet', function(){
-//  describe('#generic', function() {
-//    for (var key in docs) {
-//      if (docs.hasOwnProperty(key)) {
-//        // undefined means no split
-//        // /\t|\n|\r| / means on whitespace
-//        // '' means on every char
-//        for(var i in seps) {
-//          sep = seps[i];
-//          it('[' + key + '] should be able to parse -> ' + sep,
-//            generic(key,sep, docs));
-//        }
-//      }
-//    }
-//  });
-//});
+describe('clarinet', function(){
+  describe('#generic', function() {
+    for (var key in docs) {
+      if (docs.hasOwnProperty(key)) {
+        // undefined means no split
+        // /\t|\n|\r| / means on whitespace
+        // '' means on every char
+        for(var i in seps) {
+          sep = seps[i];
+          it('[' + key + '] should be able to parse -> ' + sep,
+            generic(key,sep, docs));
+        }
+      }
+    }
+  });
+});
 
 describe('clarinet', function(){
   describe('#select', function() {
