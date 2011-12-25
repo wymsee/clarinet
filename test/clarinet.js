@@ -772,9 +772,6 @@ describe('clarinet', function(){
       }
     }
   });
-});
-
-describe('clarinet', function(){
   describe('#select', function() {
     for (var key in sels) {
       if (sels.hasOwnProperty(key)) {
