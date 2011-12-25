@@ -282,15 +282,28 @@ if(typeof FastList === 'function') {
   }
 
   function closeKey(parser, event) {
+    // select the current level
     var sel = parser.opt.select[parser.deep-1];
+    // next we are going to try a value, regardless
     parser.state  = S.VALUE;
+    // if they defined a selector
     if(typeof sel !== 'undefined') {
+      // oif it doesnt match the current level
+      // parser.opt.select[parser.deep] !== 'undefined' ||
       if (!(sel[0] === 'k' && sel[1] === parser.textNode)) {
         parser.textNode = "";
         parser.ignore   = parser.deep;
         parser.state    = S.IGNORE;
         return;
-      } else parser.textNode = "";
+      } else {
+        // if there is a level after we can pretty much disregard
+        // this one as the user only wants you to issue the last
+        // step of the path expression
+//        if(parser.opt.select[parser.deep] !== 'undefined')
+  //        alert('a');
+        parser.ignore   = parser.deep;
+        parser.textNode = "";
+      }
     } else closeValue(parser, event);
   }
 
@@ -318,7 +331,8 @@ if(typeof FastList === 'function') {
   }
 
   function end(parser) {
-    if (parser.state !== S.VALUE) error(parser, "Unexpected end");
+    if (!(parser.state === S.VALUE || parser.state === S.IGNORE))
+      error(parser, "Unexpected end");
     closeValue(parser);
     parser.c      = "";
     parser.closed = true;
@@ -393,9 +407,11 @@ if(typeof FastList === 'function') {
             } else closeKey(parser, 'onkey');
           } else if (c==='}') {
             parser.deep--;
+            parser.state = parser.stack.pop() || S.VALUE;
             if(parser.ignore === null || parser.deep >= parser.ignore)
               emitNode(parser, 'oncloseobject');
-            parser.state = parser.stack.pop() || S.VALUE;
+            else if (parser.deep < parser.ignore)
+              parser.state = S.IGNORE;
           } else if(c===',') {
             if(parser.state === S.CLOSE_OBJECT)
               parser.stack.push(S.CLOSE_OBJECT);
@@ -596,9 +612,12 @@ if(typeof FastList === 'function') {
             parser.deep++;
           else if(c===']' || c==='}')
             parser.deep--;
+          else if(c===',' && parser.deep === parser.ignore)
+            // need to go back a level cause the state transition except
+            i--;
           else continue;
-          if(parser.deep > parser.ignore) continue;
-          else parser.state = parser.stack.pop() || S.VALUE;
+          if(parser.deep === parser.ignore)
+            parser.state = parser.stack.pop() || S.VALUE;
         continue;
 
         default:
