@@ -58,6 +58,33 @@ var seps   = [undefined]//[undefined, /\t|\n|\r/, '']
         , ['ready'       , undefined]
         ]
       }
+    , npm_like_one :
+      { text   : '{"a": {"id": 1}, "b": {"id": 2}, "c": {"id": 3}}'
+      , select : 'a.id'
+      , events :
+        [ ['value'       , 1]
+        , ['end'         , undefined]
+        , ['ready'       , undefined]
+        ]
+      }
+    , npm_like_two :
+      { text   : '{"a": {"id": 1}, "b": {"id": 2}, "c": {"id": 3}}'
+      , select : 'b.id'
+      , events :
+        [ ['value'       , 2]
+        , ['end'         , undefined]
+        , ['ready'       , undefined]
+        ]
+      }
+    , npm_like_three :
+      { text   : '{"a": {"id": 1}, "b": {"id": 2}, "c": {"id": 3}}'
+      , select : 'c.id'
+      , events :
+        [ ['value'       , 3]
+        , ['end'         , undefined]
+        , ['ready'       , undefined]
+        ]
+      }
     , empty_object:
       { text   : 
           '{}'

@@ -2,6 +2,7 @@
 var fs             = require('fs')
   , clarinet       = require('../clarinet')
   , parse_stream   = clarinet.createStream()
+    //({select: "geckoboard.author.name"})
   , author         = false
   , authors        = {}
   ;

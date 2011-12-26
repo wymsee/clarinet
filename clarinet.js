@@ -160,8 +160,6 @@ if(typeof FastList === 'function') {
     parser.position    = parser.column = parser.deep = 0;
     // start on line 1, 0 didn't match with text editors
     parser.line        = 1;
-    // sets the ignore to zero
-    parser.ignore      = null;
     parser.selectFound = false;
     if(typeof parser.opt.select === 'string') {
       var index  = []
@@ -190,6 +188,7 @@ if(typeof FastList === 'function') {
     parser.opt.select = parser.opt.select || [];
     if(parser.opt.select.length > 0)
       parser.ignore   = parser.opt.select.length;
+    else parser.ignore = 0;
     emit(parser, "onready");
   }
 
@@ -297,22 +296,13 @@ if(typeof FastList === 'function') {
     parser.state  = S.VALUE;
     // if they defined a selector
     if(typeof sel !== 'undefined') {
+      parser.textNode = "";
+      parser.ignore   = parser.deep;
       // if it doesnt match the current level
-      // parser.opt.select[parser.deep] !== 'undefined' ||
-      if (!(sel[0] === flag && sel[1] === parser.textNode)) {
-        parser.textNode = "";
-        parser.ignore   = parser.deep;
+      if (!(sel[0] === flag && sel[1] === parser.textNode))
         parser.state    = S.IGNORE;
-        return;
-      } else {
-        // we can stop searching we found eventhing we needed
-        if(parser.deep===parser.opt.select.length)
-          parser.selectFound = true;
-        // if there is a level after we can pretty much disregard
-        // this one as the user only wants you to issue the last
-        // step of the path expression
-        parser.textNode = "";
-      }
+      else if(parser.deep===parser.opt.select.length)
+        parser.selectFound = true;
     } else closeValue(parser, event);
   }
 
@@ -355,7 +345,7 @@ if(typeof FastList === 'function') {
     if (this.error) throw this.error;
     if (parser.closed) return error(parser,
       "Cannot write after close. Assign an onready handler.");
-    if (chunk === null) return end(parser);
+    if (chunk === null || parser.selectFound) return end(parser);
     var i = 0, c = chunk[0], p = parser.p;
     //if (clarinet.DEBUG) console.log('write -> [' + chunk + ']');
     while (c) {
@@ -465,7 +455,6 @@ if(typeof FastList === 'function') {
           if(c===',') {
             parser.stack.push(S.CLOSE_ARRAY);
             closeKey(parser, 'onvalue');
-            //closeValue(parser, 'onvalue');
             parser.state  = S.VALUE;
           } else if (c===']') {
             parser.deep--;
