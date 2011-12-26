@@ -10,7 +10,7 @@ function assert(expr, msg) {
   }
 }
 
-var seps   = [undefined, /\t|\n|\r/, '']
+var seps   = [undefined]//[undefined, /\t|\n|\r/, '']
   , sep
   , sels   =
     { one_step:
@@ -41,11 +41,20 @@ var seps   = [undefined, /\t|\n|\r/, '']
       }
     , three_steps:
       { text   : 
-          '{"a": {"b": {"c": "foo"}}, "b": null}'
+          '{"a": {"b": {"c": "foo"}}, "b": {"a": "c"}}'
       , select : 'a.b.c'
       , events :
         [ ['value'       , "foo"]
         , ['end'         , undefined]
+        , ['ready'       , undefined]
+        ]
+      }
+    , too_many_steps:
+      { text   : 
+          '{"a": {"b": {"c": "foo"}}, "b": {"a": "c"}}'
+      , select : 'a.b.c.d'
+      , events :
+        [ ['end'         , undefined]
         , ['ready'       , undefined]
         ]
       }
@@ -64,6 +73,84 @@ var seps   = [undefined, /\t|\n|\r/, '']
       , select : 'a'
       , events :
         [ ['end'         , undefined]
+        , ['ready'       , undefined]
+        ]
+      }
+    , first_element:
+      { text   : 
+          '[1,2,3]'
+      , select : '[0]'
+      , events :
+        [ ['value'       , 1]
+        , ['end'         , undefined]
+        , ['ready'       , undefined]
+        ]
+      }
+      // nth element
+      // last element
+    , empty_object_as_selected:
+      { text   : 
+          '{"a": {}}'
+      , select : 'a'
+      , events :
+        [ ['openobject'  , undefined]
+        , ['closeobject' , undefined]
+        , ['end'         , undefined]
+        , ['ready'       , undefined]
+        ]
+      }
+    , empty_array_as_selected:
+      { text   : 
+          '{"b": false, "a": []}'
+      , select : 'a'
+      , events :
+        [ ['openarray'   , undefined]
+        , ['closearray'  , undefined]
+        , ['end'         , undefined]
+        , ['ready'       , undefined]
+        ]
+      }
+    , three_steps_as_array:
+      { text   : 
+          '{"a": {"b": {"c": []}}, "b": null}'
+      , select : 'a.b.c'
+      , events :
+        [ ['openarray'   , undefined]
+        , ['closearray'  , undefined]
+        , ['end'         , undefined]
+        , ['ready'       , undefined]
+        ]
+      }
+    , three_steps_as_object:
+      { text   : 
+          '{"a": {"b": {"c": {}}}, "b": null}'
+      , select : 'a.b.c'
+      , events :
+        [ ['openobject'  , undefined]
+        , ['closeobject' , undefined]
+        , ['end'         , undefined]
+        , ['ready'       , undefined]
+        ]
+      }
+    , two_steps_on_open_object:
+      { text   : 
+          '{"a": {"b": {"c": true}}, "b": {"c":' +
+          '["foo", "bar", "baz",true,false,null,{"key":"value"}]' +
+          ', "d": null}}'
+      , select : 'b.c'
+      , events :
+        [ ['openarray'   , undefined]
+        , ['value'       , 'foo']
+        , ['value'       , 'bar']
+        , ['value'       , 'baz']
+        , ['value'       , true]
+        , ['value'       , false]
+        , ['value'       , null]
+        , ['openobject'  , 'key']
+        , ['value'       , "value"]
+        , ["closeobject" , undefined]
+        , ['closearray'  , undefined]
+        , ['end'         , undefined]
         , ['ready'       , undefined]
         ]
       }

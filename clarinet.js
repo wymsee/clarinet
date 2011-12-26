@@ -153,15 +153,16 @@ if(typeof FastList === 'function') {
     // stack is a fast list cause we only push and shift
     // if fastlist is not available it will be a normal array
     // which also can push and shift
-    parser.stack    = new fastlist();
+    parser.stack       = new fastlist();
     // deep counts the stack level, increments when you enter
     // a object or array and decrements when you leave and object or array
     // this is used by the `only` and `except` functionality
-    parser.position = parser.column = parser.deep = 0;
+    parser.position    = parser.column = parser.deep = 0;
     // start on line 1, 0 didn't match with text editors
-    parser.line     = 1;
+    parser.line        = 1;
     // sets the ignore to zero
-    parser.ignore   = null;
+    parser.ignore      = null;
+    parser.selectFound = false;
     if(typeof parser.opt.select === 'string') {
       var index  = []
         , select = parser.opt.select
@@ -267,8 +268,10 @@ if(typeof FastList === 'function') {
   };
 
   function emit(parser, event, data) {
-    if(clarinet.INFO) console.log('-- emit', event, data, parser.deep);
-    if (parser.deep >= parser.ignore && parser[event]) parser[event](data);
+    if (parser.deep >= parser.ignore && parser[event]) {
+      if(clarinet.INFO) console.log('-- emit', event, data, parser.deep);
+      parser[event](data);
+    }
   }
 
   function emitNode(parser, event, data) {
@@ -285,19 +288,26 @@ if(typeof FastList === 'function') {
 
   function closeKey(parser, event) {
     // select the current level
-    var sel = parser.opt.select[parser.deep-1];
+    var sel  = parser.opt.select[parser.deep-1]
+      // value is fired by arrays
+      // key and open object are fired by keys
+      , flag = event === 'onvalue' ? 'a' : 'k'
+      ;
     // next we are going to try a value, regardless
     parser.state  = S.VALUE;
     // if they defined a selector
     if(typeof sel !== 'undefined') {
       // if it doesnt match the current level
       // parser.opt.select[parser.deep] !== 'undefined' ||
-      if (!(sel[0] === 'k' && sel[1] === parser.textNode)) {
+      if (!(sel[0] === flag && sel[1] === parser.textNode)) {
         parser.textNode = "";
         parser.ignore   = parser.deep;
         parser.state    = S.IGNORE;
         return;
       } else {
+        // we can stop searching we found eventhing we needed
+        if(parser.deep===parser.opt.select.length)
+          parser.selectFound = true;
         // if there is a level after we can pretty much disregard
         // this one as the user only wants you to issue the last
         // step of the path expression
@@ -347,7 +357,7 @@ if(typeof FastList === 'function') {
       "Cannot write after close. Assign an onready handler.");
     if (chunk === null) return end(parser);
     var i = 0, c = chunk[0], p = parser.p;
-    if (clarinet.DEBUG) console.log('write -> [' + chunk + ']');
+    //if (clarinet.DEBUG) console.log('write -> [' + chunk + ']');
     while (c) {
       p = c;
       parser.c = c = chunk.charAt(i++);
@@ -361,7 +371,8 @@ if(typeof FastList === 'function') {
       if(!c) break;
 
       if (clarinet.DEBUG) 
-        console.log(i,c,clarinet.STATE[parser.state],parser.deep);
+        console.log(i,c,clarinet.STATE[parser.state]
+                   ,parser.deep,parser.ignore);
       parser.position ++;
       if (c === "\n") {
         parser.line ++;
@@ -453,7 +464,8 @@ if(typeof FastList === 'function') {
         case S.CLOSE_ARRAY:
           if(c===',') {
             parser.stack.push(S.CLOSE_ARRAY);
-            closeValue(parser, 'onvalue');
+            closeKey(parser, 'onvalue');
+            //closeValue(parser, 'onvalue');
             parser.state  = S.VALUE;
           } else if (c===']') {
             parser.deep--;
@@ -605,6 +617,8 @@ if(typeof FastList === 'function') {
         continue;
 
         case S.IGNORE:
+          // stop
+          if(parser.selectFound) return parser;
           if(c==='{' || c==='[')
             parser.deep++;
           else if(c===']' || c==='}')
