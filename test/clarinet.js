@@ -13,7 +13,7 @@ function assert(expr, msg) {
 // undefined means no split
 // /\t|\n|\r| / means on whitespace
 // '' means on every char
-var seps   = [undefined]//[undefined, '', /\t|\n|\r/]
+var seps   = [undefined, '', /\t|\n|\r/]
   , sep
   , sels   =
     { one_step:
@@ -124,18 +124,6 @@ var seps   = [undefined]//[undefined, '', /\t|\n|\r/]
         , ['ready'       , undefined]
         ]
       }
-    , first_element:
-      { text   : 
-          '[1,2,3]'
-      , select : '[0]'
-      , events :
-        [ ['value'       , 1]
-        , ['end'         , undefined]
-        , ['ready'       , undefined]
-        ]
-      }
-      // nth element
-      // last element
     , empty_object_as_selected:
       { text   : 
           '{"a": {}}'
@@ -895,19 +883,19 @@ function generic(key,sep,tests) {
 }
 
 describe('clarinet', function(){
-  //describe('#generic', function() {
-  //  for (var key in docs) {
-  //    if (docs.hasOwnProperty(key)) {
-  //      for(var i in seps) {
-  //        sep = seps[i];
-  //        it('[' + key + '] should be able to parse -> ' + sep,
-  //          generic(key,sep, docs));
-  //      }
-  //    }
-  //  }
-  //});
+  describe('#generic', function() {
+    for (var key in docs) {
+      if (docs.hasOwnProperty(key)) {
+        for(var i in seps) {
+          sep = seps[i];
+          it('[' + key + '] should be able to parse -> ' + sep,
+            generic(key,sep, docs));
+        }
+      }
+    }
+  });
   describe('#select', function() {
-    for (var key in {first_element:""}) {
+    for (var key in sels) {
       if (sels.hasOwnProperty(key)) {
         for(var i in seps) {
           sep = seps[i];
