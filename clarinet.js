@@ -187,9 +187,9 @@ if(typeof FastList === 'function') {
       }
       parser.opt.select = index;
     }
-    parser.opt.select = parser.opt.select || [];
+    parser.opt.select   = parser.opt.select || [];
     parser.selectLength = parser.opt.select.length;
-    parser.ignore    = parser.selectLength;
+    parser.ignore       = parser.selectLength;
     emit(parser, "onready");
   }
 
@@ -271,7 +271,7 @@ if(typeof FastList === 'function') {
     if (parser[event]) {
       if(parser.selectLength > 0) {
         if(event === 'onend' || event === 'onready' 
-          || (parser.deep >= parser.ignore && parser.inflexion)) {
+          || (parser.deep >= parser.selectLength && parser.inflexion)) {
           if(clarinet.INFO) 
             console.log('-- emit selective', event, data, parser.deep);
           parser[event](data);

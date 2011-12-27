@@ -13,7 +13,7 @@ function assert(expr, msg) {
 // undefined means no split
 // /\t|\n|\r| / means on whitespace
 // '' means on every char
-var seps   = ['']//[undefined, '', /\t|\n|\r/]
+var seps   = [undefined, '', /\t|\n|\r/]
   , sep
   , sels   =
     { one_step:
