@@ -142,26 +142,27 @@ if(typeof FastList === 'function') {
     var parser = this
       ;
     clearBuffers(parser);
-    parser.q        = parser.c = parser.p = "";
-    parser.opt      = opt || {};
+    parser.q               = parser.c = parser.p = "";
+    parser.opt             = opt || {};
     // undocumented for now, just in case someone asks for this
     parser.bufferCheckPosition = 
       parser.opt.bufferCheckPosition || clarinet.MAX_BUFFER_LENGTH;
     // is the parser closed?
-    parser.closed   = false;
-    parser.error    = null;
-    parser.state    = S.BEGIN;
+    parser.closed          = false;
+    parser.error           = null;
+    parser.state           = S.BEGIN;
     // stack is a fast list cause we only push and shift
     // if fastlist is not available it will be a normal array
     // which also can push and shift
-    parser.stack       = new fastlist();
+    parser.stack           = new fastlist();
     // deep counts the stack level, increments when you enter
     // a object or array and decrements when you leave and object or array
     // this is used by the `only` and `except` functionality
-    parser.position    = parser.column = parser.deep = 0;
+    parser.position        = parser.column = parser.deep = 0;
     // start on line 1, 0 didn't match with text editors
-    parser.line        = 1;
-    parser.selectFound = false;
+    parser.line            = 1;
+    parser.inflexion       = false;
+    parser.selectFinished  = false;
     if(typeof parser.opt.select === 'string') {
       var index  = []
         , select = parser.opt.select
@@ -187,9 +188,8 @@ if(typeof FastList === 'function') {
       parser.opt.select = index;
     }
     parser.opt.select = parser.opt.select || [];
-    if(parser.opt.select.length > 0)
-      parser.ignore   = parser.opt.select.length;
-    else parser.ignore = 0;
+    parser.selectLength = parser.opt.select.length;
+    parser.ignore    = parser.selectLength;
     emit(parser, "onready");
   }
 
@@ -269,8 +269,15 @@ if(typeof FastList === 'function') {
 
   function emit(parser, event, data) {
     if (parser[event]) {
-      if(event === 'onend' || event === 'onready' 
-                           || parser.deep >= parser.ignore) {
+      if(parser.selectLength > 0) {
+        if(event === 'onend' || event === 'onready' 
+          || (parser.deep >= parser.ignore && parser.inflexion)) {
+          if(clarinet.INFO) 
+            console.log('-- emit selective', event, data, parser.deep);
+          parser[event](data);
+        }
+      }
+      else {
         if(clarinet.INFO) console.log('-- emit', event, data, parser.deep);
         parser[event](data);
       }
@@ -302,10 +309,12 @@ if(typeof FastList === 'function') {
     if(typeof sel !== 'undefined') {
       parser.ignore   = parser.deep;
       // if it doesnt match the current level
-      if (!(sel[0] === flag && sel[1] === parser.textNode))
+      if (!(sel[0] === flag && sel[1] === parser.textNode)) {
+        if(parser.inflexion)
+          parser.selectFinished = true;
         parser.state    = S.IGNORE;
-      else if(parser.deep===parser.opt.select.length)
-        parser.selectFound = true;
+      } else if(parser.deep===parser.selectLength)
+        parser.inflexion = true;
       parser.textNode = "";
     } else closeValue(parser, event);
   }
@@ -349,10 +358,11 @@ if(typeof FastList === 'function') {
     if (this.error) throw this.error;
     if (parser.closed) return error(parser,
       "Cannot write after close. Assign an onready handler.");
-    if (chunk === null || parser.selectFound) return end(parser);
+    if (chunk === null) return end(parser);
     var i = 0, c = chunk[0], p = parser.p;
     //if (clarinet.DEBUG) console.log('write -> [' + chunk + ']');
     while (c) {
+      if(parser.selectFinished) return;
       p = c;
       parser.c = c = chunk.charAt(i++);
       // if chunk doesnt have next, like streaming char by char
@@ -366,7 +376,7 @@ if(typeof FastList === 'function') {
 
       if (clarinet.DEBUG) 
         console.log(i,c,clarinet.STATE[parser.state]
-                   ,parser.deep,parser.ignore);
+                   ,parser.deep,parser.ignore,parser.inflexion,parser.closed);
       parser.position ++;
       if (c === "\n") {
         parser.line ++;
@@ -615,9 +625,11 @@ if(typeof FastList === 'function') {
         continue;
 
         case S.IGNORE:
+          if(parser.inflexion) {
+            parser.selectFound = true; 
+            continue;
+          }
           if (c === '\r' || c === '\n' || c === ' ' || c === '\t') continue;
-          // stop
-          if(parser.selectFound) return parser;
           if(c==='{' || c==='[')
             parser.deep++;
           else if(c===']' || c==='}')

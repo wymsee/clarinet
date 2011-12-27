@@ -2,7 +2,7 @@
 var fs             = require('fs')
   , clarinet       = require('../clarinet')
   , parse_stream   = clarinet.createStream()
-    //{select: "jsface.author.name"}
+    //{select: "nano.author.name"}
   , author         = false
   , authors        = {}
   ;
