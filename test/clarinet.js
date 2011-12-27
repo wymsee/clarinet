@@ -13,7 +13,7 @@ function assert(expr, msg) {
 // undefined means no split
 // /\t|\n|\r| / means on whitespace
 // '' means on every char
-var seps   = [undefined, '', /\t|\n|\r/]
+var seps   = [undefined]//[undefined, '', /\t|\n|\r/]
   , sep
   , sels   =
     { one_step:
@@ -895,19 +895,19 @@ function generic(key,sep,tests) {
 }
 
 describe('clarinet', function(){
-  describe('#generic', function() {
-    for (var key in docs) {
-      if (docs.hasOwnProperty(key)) {
-        for(var i in seps) {
-          sep = seps[i];
-          it('[' + key + '] should be able to parse -> ' + sep,
-            generic(key,sep, docs));
-        }
-      }
-    }
-  });
+  //describe('#generic', function() {
+  //  for (var key in docs) {
+  //    if (docs.hasOwnProperty(key)) {
+  //      for(var i in seps) {
+  //        sep = seps[i];
+  //        it('[' + key + '] should be able to parse -> ' + sep,
+  //          generic(key,sep, docs));
+  //      }
+  //    }
+  //  }
+  //});
   describe('#select', function() {
-    for (var key in sels) {
+    for (var key in {first_element:""}) {
       if (sels.hasOwnProperty(key)) {
         for(var i in seps) {
           sep = seps[i];

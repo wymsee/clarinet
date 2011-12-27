@@ -298,18 +298,14 @@ if(typeof FastList === 'function') {
 
   function closeKey(parser, event) {
     // select the current level
-    var sel  = parser.opt.select[parser.deep-1]
-      // value is fired by arrays
-      // key and open object are fired by keys
-      , flag = event === 'onvalue' ? 'a' : 'k'
-      ;
+    var sel  = parser.opt.select[parser.deep-1];
     // next we are going to try a value, regardless
     parser.state  = S.VALUE;
     // if they defined a selector
     if(typeof sel !== 'undefined') {
       parser.ignore   = parser.deep;
       // if it doesnt match the current level
-      if (!(sel[0] === flag && sel[1] === parser.textNode)) {
+      if (!(sel[0] === 'k' && sel[1] === parser.textNode)) {
         if(parser.inflexion)
           parser.selectFinished = true;
         parser.state    = S.IGNORE;
@@ -627,7 +623,7 @@ if(typeof FastList === 'function') {
         case S.IGNORE:
           if(parser.inflexion) {
             parser.selectFound = true; 
-            continue;
+            return;
           }
           if (c === '\r' || c === '\n' || c === ' ' || c === '\t') continue;
           if(c==='{' || c==='[')
