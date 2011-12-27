@@ -70,7 +70,8 @@ if(typeof FastList === 'function') {
     , NULL3                             : S++ // l
     , NUMBER_DECIMAL_POINT              : S++ // .
     , NUMBER_DIGIT                      : S++ // [0-9]
-    , IGNORE                            : S++
+    , IGNORE                            : S++ // move along nothing to see
+    , IGNORE_STRING                     : S++ // strings can have }] etc
     };
 
   // creates the 0 -> BEGIN association in clarinet.STATE (2 way lookup)
@@ -267,9 +268,12 @@ if(typeof FastList === 'function') {
   };
 
   function emit(parser, event, data) {
-    if (parser.deep >= parser.ignore && parser[event]) {
-      if(clarinet.INFO) console.log('-- emit', event, data, parser.deep);
-      parser[event](data);
+    if (parser[event]) {
+      if(event === 'onend' || event === 'onready' 
+                           || parser.deep >= parser.ignore) {
+        if(clarinet.INFO) console.log('-- emit', event, data, parser.deep);
+        parser[event](data);
+      }
     }
   }
 
@@ -296,13 +300,13 @@ if(typeof FastList === 'function') {
     parser.state  = S.VALUE;
     // if they defined a selector
     if(typeof sel !== 'undefined') {
-      parser.textNode = "";
       parser.ignore   = parser.deep;
       // if it doesnt match the current level
       if (!(sel[0] === flag && sel[1] === parser.textNode))
         parser.state    = S.IGNORE;
       else if(parser.deep===parser.opt.select.length)
         parser.selectFound = true;
+      parser.textNode = "";
     } else closeValue(parser, event);
   }
 
@@ -406,9 +410,13 @@ if(typeof FastList === 'function') {
               closeKey(parser, 'onopenobject');
             } else closeKey(parser, 'onkey');
           } else if (c==='}') {
-            parser.deep--;
             parser.state = parser.stack.pop() || S.VALUE;
-            emitNode(parser, 'oncloseobject');
+            // write last value
+            if (parser.textNode) closeValue(parser);
+            // change deep
+            parser.deep--;
+            // emit close object if deep is still deep enough :)
+            emit(parser, 'oncloseobject');
             if (parser.deep < parser.ignore)
               parser.state = S.IGNORE;
           } else if(c===',') {
@@ -457,8 +465,9 @@ if(typeof FastList === 'function') {
             closeKey(parser, 'onvalue');
             parser.state  = S.VALUE;
           } else if (c===']') {
+            if (parser.textNode) closeValue(parser);
             parser.deep--;
-            emitNode(parser, 'onclosearray');
+            emit(parser, 'onclosearray');
             parser.state = parser.stack.pop() || S.VALUE;
           } else if (c === '\r' || c === '\n' || c === ' ' || c === '\t')
               continue;
@@ -606,6 +615,7 @@ if(typeof FastList === 'function') {
         continue;
 
         case S.IGNORE:
+          if (c === '\r' || c === '\n' || c === ' ' || c === '\t') continue;
           // stop
           if(parser.selectFound) return parser;
           if(c==='{' || c==='[')
@@ -615,9 +625,24 @@ if(typeof FastList === 'function') {
           else if(c===',' && parser.deep === parser.ignore)
             // need to go back a level cause the state transition except
             i--;
-          else continue;
+          else {
+            if(c==='"') parser.state = S.IGNORE_STRING;
+            continue;
+          }
           if(parser.deep === parser.ignore)
             parser.state = parser.stack.pop() || S.VALUE;
+        continue;
+
+        case S.IGNORE_STRING:
+          var cs = parser.consecutive_slashes || 0;
+          if (c === '"' && (cs === 0 || cs%2 ===0)) {
+            parser.state  = S.IGNORE;
+            parser.cs     = 0;
+            continue;
+          }
+          if (c === '\\') cs++;
+          else            cs = 0;
+          parser.consecutive_slashes = cs;
         continue;
 
         default:

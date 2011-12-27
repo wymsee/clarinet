@@ -10,7 +10,10 @@ function assert(expr, msg) {
   }
 }
 
-var seps   = [undefined]//[undefined, /\t|\n|\r/, '']
+// undefined means no split
+// /\t|\n|\r| / means on whitespace
+// '' means on every char
+var seps   = [undefined, /\t|\n|\r/, '']
   , sep
   , sels   =
     { one_step:
@@ -81,6 +84,24 @@ var seps   = [undefined]//[undefined, /\t|\n|\r/, '']
       , select : 'c.id'
       , events :
         [ ['value'       , 3]
+        , ['end'         , undefined]
+        , ['ready'       , undefined]
+        ]
+      }
+    , crazy_nested_escapes_in_ignores :
+      { text   : '{"a": {"id": 1}, "b": {"trash": "}}}}]]]]","id": 2}}'
+      , select : 'b.id'
+      , events :
+        [ ['value'       , 2]
+        , ['end'         , undefined]
+        , ['ready'       , undefined]
+        ]
+      }
+    , crazy_nested_escapes_in_ignores2 :
+      { text   : '{"a": {"id": 1}, "b": {"trash": "}","id": 2}}'
+      , select : 'b.id'
+      , events :
+        [ ['value'       , 2]
         , ['end'         , undefined]
         , ['ready'       , undefined]
         ]
@@ -857,10 +878,12 @@ function generic(key,sep,tests) {
           current = l.shift();
           ++i;
           assert(current[0] === event, 
-            '[ln' + i + '] event: [' + current[0] + '] got: [' + event +']');
+            '[ln' + i + '] event: [' + current[0] + '] got: [' + event +']'+
+            ' select: ' + select);
           if(event!== 'error')
             assert(current[1] === value, 
-              '[ln' + i + '] value: [' + current[1] + '] got: [' + value +']');
+              '[ln' + i + '] value: [' + current[1] + '] got: [' 
+                    + value +']' + ' select: ' + select);
         }
       };
     });
@@ -875,9 +898,6 @@ describe('clarinet', function(){
   describe('#generic', function() {
     for (var key in docs) {
       if (docs.hasOwnProperty(key)) {
-        // undefined means no split
-        // /\t|\n|\r| / means on whitespace
-        // '' means on every char
         for(var i in seps) {
           sep = seps[i];
           it('[' + key + '] should be able to parse -> ' + sep,
