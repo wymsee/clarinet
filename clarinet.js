@@ -65,7 +65,8 @@ if(typeof FastList === 'function') {
     , NULL2                             : S++ // l
     , NULL3                             : S++ // l
     , NUMBER_DECIMAL_POINT              : S++ // .
-    , NUMBER_DIGIT                      : S++ // [0-9]    
+    , NUMBER_DIGIT                      : S++ // [0-9]
+    , IGNORE                            : S++ // skipping stuff
     };
 
   for (var s_ in clarinet.STATE) clarinet.STATE[clarinet.STATE[s_]] = s_;
@@ -124,6 +125,9 @@ if(typeof FastList === 'function') {
   }
   
   var stringTokenPattern = /[\\"\n]/g
+    , skipTopLevelPattern = /[\[\]{}",]/g
+    , skipDeepLevelPattern = /[\[\]{}"]/g
+    , skipStringPattern = /["\\]/g
 
   function CParser (opt) {
     if (!(this instanceof CParser)) return new CParser (opt);
@@ -143,6 +147,8 @@ if(typeof FastList === 'function') {
     parser.slashed  = false;
     parser.unicodeI = 0;
     parser.unicodeS = null;
+    parser.ignoreLevel = 0;
+    parser.ignoringString = false;
     emit(parser, "onready");
   }
 
@@ -222,7 +228,8 @@ if(typeof FastList === 'function') {
 
   function emit(parser, event, data) {
     if(clarinet.INFO) console.log('-- emit', event, data);
-    if (parser[event]) parser[event](data);
+    if (parser[event]) return parser[event](data);
+    return false;
   }
 
   function emitNode(parser, event, data) {
@@ -231,9 +238,11 @@ if(typeof FastList === 'function') {
   }
 
   function closeValue(parser, event) {
+    var result = false;
     parser.textNode = textopts(parser.opt, parser.textNode);
-    if (parser.textNode) emit(parser, (event ? event : "onvalue"), parser.textNode);
+    if (parser.textNode) result = emit(parser, (event ? event : "onvalue"), parser.textNode);
     parser.textNode = "";
+    return result;
   }
 
   function closeNumber(parser) {
@@ -328,7 +337,13 @@ if(typeof FastList === 'function') {
             if(parser.state === S.CLOSE_OBJECT) {
               parser.stack.push(S.CLOSE_OBJECT);
               closeValue(parser, 'onopenobject');
-            } else closeValue(parser, 'onkey');
+            } else {
+              var wantSkip = closeValue(parser, 'onkey');
+              if (wantSkip) {
+                parser.state = S.IGNORE;
+                continue;
+              }
+            }
             parser.state  = S.VALUE;
           } else if (c==='}') {
             emitNode(parser, 'oncloseobject');
@@ -549,6 +564,79 @@ if(typeof FastList === 'function') {
             closeNumber(parser);
             i--; // go back one
             parser.state = parser.stack.pop() || S.VALUE;
+          }
+        continue;
+        
+        case S.IGNORE:
+          while (c) {
+            // string escape
+            if (parser.slashed) {
+              c = chunk.charAt(i++);
+              parser.slashed = false;
+              continue;
+            }
+            // string
+            if (parser.ignoringString) {
+              skipStringPattern.lastIndex = i-1;
+              var reResult = skipStringPattern.exec(chunk);
+              if (reResult != null) {
+                i = reResult.index + 1;
+                c = chunk.charAt(i++);
+                if (reResult[0] === '\\') {
+                  parser.slashed = true;
+                } else {
+                  // must be "
+                  parser.ignoringString = false;
+                }
+                continue;
+              } else {
+                // no end or escaping in this chunk, jump out
+                // verifying buffer length makes no sense, not buffering anything
+                return parser;
+              }
+            }
+            // not a string
+            var ignorePattern = (parser.ignoreLevel === 0) ? skipTopLevelPattern : skipDeepLevelPattern;
+            ignorePattern.lastIndex = i-1;
+            var reResult = ignorePattern.exec(chunk);
+            if (reResult != null) {
+              var reChar = reResult[0];
+              i = reResult.index; // TOO EARLY ON PURPOSE!
+              c = chunk.charAt(i++);
+              if (reChar === '[' || reChar === '{') {
+                parser.ignoreLevel++;
+                c = chunk.charAt(i++);
+                continue;
+              } else if (reChar === ']' || reChar === '}') {
+                if (parser.ignoreLevel > 0) {
+                  parser.ignoreLevel--;
+                  c = chunk.charAt(i++)
+                  continue;
+                } else {
+                  //FIXME END: ] or }
+                  if (reChar === ']') {
+                    parser.state = S.CLOSE_ARRAY;
+                  } else {
+                    parser.state = S.CLOSE_OBJECT;
+                  }
+                  i = reResult.index - 1;
+                  c = chunk.charAt(i++);
+                  break
+                }
+              } else if (reChar === '"') {
+                parser.ignoringString = true;
+                c = chunk.charAt(i++);
+                continue;
+              } else if (reChar === ',') {
+                //END: ,
+                parser.state = S.OPEN_KEY;
+                break
+              }
+            } else {
+              // nothing interesting in this chunk, jump out
+              // verifying buffer length makes no sense, not buffering anything
+              return parser;
+            }
           }
         continue;
 
