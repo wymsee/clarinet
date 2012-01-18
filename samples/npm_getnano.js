@@ -9,7 +9,19 @@ var print = true;
 parser.onopenobject = function(name) {
   depth++;
   if (print) console.log('OPEN WITH KEY: '+name);
+  return handleKey(name);
 };
+
+function handleKey(name) {
+  if (name!=='nano' && depth === 1) {
+    // IGNORE
+    return true/*!!!*/;
+  } else if (name==='nano' && depth === 1) {
+    print = true
+  }
+  //if (depth === 2) console.log(depth+' KEY: '+name);
+  return false;
+}
 
 parser.oncloseobject = function() {
   depth--;
@@ -20,15 +32,8 @@ parser.oncloseobject = function() {
 };
 
 parser.onkey = function(name) {
-  if (name!=='nano' && depth === 1) {
-    // IGNORE
-    return true/*!!!*/;
-  } else if (name==='nano' && depth === 1) {
-    print = true
-  }
   if (print) console.log('KEY: '+name)
-  //if (depth === 2) console.log(depth+' KEY: '+name);
-  return false;
+  return handleKey(name)
 };
 
 parser.onvalue = function(value) {

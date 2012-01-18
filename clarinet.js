@@ -336,13 +336,13 @@ if(typeof FastList === 'function') {
           if(c===':') {
             if(parser.state === S.CLOSE_OBJECT) {
               parser.stack.push(S.CLOSE_OBJECT);
-              closeValue(parser, 'onopenobject');
+              var wantSkip = closeValue(parser, 'onopenobject');
             } else {
               var wantSkip = closeValue(parser, 'onkey');
-              if (wantSkip) {
-                parser.state = S.IGNORE;
-                continue;
-              }
+            }
+            if (wantSkip) {
+              parser.state = S.IGNORE;
+              continue;
             }
             parser.state  = S.VALUE;
           } else if (c==='}') {
