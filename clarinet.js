@@ -27,7 +27,10 @@ else env = window;
     , "ready"
     ];
 
-  var buffers     = [ "textNode", "numberNode" ]
+  var buffers     = {
+        textNode: undefined,
+        numberNode: ""
+    }
     , streamWraps = clarinet.EVENTS.filter(function (ev) {
           return ev !== "error" && ev !== "end";
         })
@@ -93,16 +96,16 @@ else env = window;
     var maxAllowed = Math.max(clarinet.MAX_BUFFER_LENGTH, 10)
       , maxActual = 0
       ;
-    for (var i = 0, l = buffers.length; i < l; i ++) {
-      var len = parser[buffers[i]].length;
+    for (var buffer in buffers) {
+      var len = parser[buffer] === undefined ? 0 : parser[buffer].length;
       if (len > maxAllowed) {
-        switch (buffers[i]) {
+        switch (buffer) {
           case "text":
             closeText(parser);
           break;
 
           default:
-            error(parser, "Max buffer length exceeded: "+ buffers[i]);
+            error(parser, "Max buffer length exceeded: "+ buffer);
         }
       }
       maxActual = Math.max(maxActual, len);
@@ -112,8 +115,8 @@ else env = window;
   }
 
   function clearBuffers (parser) {
-    for (var i = 0, l = buffers.length; i < l; i ++) {
-      parser[buffers[i]] = "";
+    for (var buffer in buffers) {
+      parser[buffer] = buffers[buffer];
     }
   }
 
@@ -292,10 +295,10 @@ else env = window;
 
   function closeValue(parser, event) {
     parser.textNode = textopts(parser.opt, parser.textNode);
-    if (parser.textNode) {
+    if (parser.textNode !== undefined) {
       emit(parser, (event ? event : "onvalue"), parser.textNode);
     }
-    parser.textNode = "";
+    parser.textNode = undefined;
   }
 
   function closeNumber(parser) {
@@ -305,6 +308,9 @@ else env = window;
   }
 
   function textopts (opt, text) {
+    if (text === undefined) {
+      return text;
+    }
     if (opt.trim) text = text.trim();
     if (opt.normalize) text = text.replace(/\s+/g, " ");
     return text;
@@ -457,6 +463,10 @@ else env = window;
         continue;
 
         case S.STRING:
+          if (parser.textNode === undefined) {
+            parser.textNode = "";
+          }
+
           // thanks thejh, this is an about 50% performance improvement.
           var starti              = i-1
             , slashed = parser.slashed
@@ -486,9 +496,6 @@ else env = window;
               parser.state = parser.stack.pop() || S.VALUE;
               parser.textNode += chunk.substring(starti, i-1);
               parser.position += i - 1 - starti;
-              if(!parser.textNode) {
-                 emit(parser, "onvalue", "");
-              }
               break;
             }
             if (c === '\\' && !slashed) {
