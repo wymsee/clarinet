@@ -55,7 +55,7 @@ parser.onopenobject = function (key) {
   // opened an object. key is the first key.
 };
 parser.onkey = function (key) {
-  // got a key in an object.
+  // got a subsequent key in an object.
 };
 parser.oncloseobject = function () {
   // closed an object.
@@ -153,7 +153,7 @@ this happens *much* more in strict mode. argument: instance of `Error`.
 
 `openobject` - object was opened. argument: key, a string with the first key of the object (if any)
 
-`key` - an object key: argument: key, a string with the current key
+`key` - an object key: argument: key, a string with the current key. Not called for first key (use `openobject` for that).
 
 `closeobject` - indication that an object was closed
 
