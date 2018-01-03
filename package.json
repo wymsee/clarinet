@@ -47,5 +47,5 @@
   "directories": {
     "test": "test"
   },
-  "license": "BSD"
+  "license": "BSD-2-Clause"
 }
