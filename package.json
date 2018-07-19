@@ -18,6 +18,7 @@
   "bugs": {
     "url": "http://github.com/dscape/clarinet/issues"
   },
+  "runkitExampleFilename": "example.js",
   "keywords": [
     "sax",
     "json",
