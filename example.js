@@ -7,8 +7,8 @@ parser.onvalue = function (v) {
 parser.onkey = function (key) {
   console.log("Key: " + key);
 };
-parser.onopenobject = function () {
-    console.log("New Object");
+parser.onopenobject = function (key) {
+    console.log("New Object, first key: " + key);
 }
 parser.oncloseobject = function () {
     console.log("Close Object");
