@@ -40,7 +40,7 @@
     "underscore": "1.2.3"
   },
   "scripts": {
-    "test": "mocha -r should -t 10000 -s 2000  test/clarinet.js test/npm.js test/utf8-chunks.js test/position.js",
+    "test": "mocha -r should -t 10000 -s 2000 test/parser.spec.js test/clarinet.js test/npm.js test/utf8-chunks.js test/position.js",
     "bench": "node benchmark/index.js",
     "postinstall": "niv clarinet@latest --destination clarinet-last-published"
   },
