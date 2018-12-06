@@ -17,12 +17,12 @@ class TestListener {
       this.currentState.container.length = 0;
     };
 
-    parser.onopenobject = name => {
+    parser.onopenobject = (name) => {
       this.openContainer({});
-      name === undefined || parser.onkey(name);
+      typeof name === "undefined" || parser.onkey(name);
     };
 
-    parser.onkey = name => {
+    parser.onkey = (name) => {
       this.currentState.key = name;
     };
 
@@ -42,7 +42,7 @@ class TestListener {
       this.pushOrSet(value);
     };
 
-    parser.onerror = error => {
+    parser.onerror = (error) => {
       throw error;
     };
 
@@ -60,6 +60,7 @@ class TestListener {
   pushOrSet(value) {
     const { container, key } = this.currentState;
     if (key !== null) {
+      // eslint-disable-next-line security/detect-object-injection
       container[key] = value;
       this.currentState.key = null;
     } else {
@@ -100,13 +101,13 @@ const literalCases = [
 const stringLiterals = [
   ["empty", JSON.stringify("")],
   ["space", JSON.stringify(" ")],
-  ["quote", JSON.stringify('"')],
+  ["quote", JSON.stringify("\"")],
   ["backslash", JSON.stringify("\\")],
-  ["slash", '"/ & \\/"'],
+  ["slash", "\"/ & \\/\""],
   ["control", JSON.stringify("\b\f\n\r\t")],
   ["unicode", JSON.stringify("\u0022")],
   ["non-unicode", JSON.stringify("&#34; %22 0x22 034 &#x22;")],
-  ["surrogate", '"😀"'],
+  ["surrogate", "\"😀\""],
 ];
 
 const arrayLiterals = [
@@ -114,17 +115,17 @@ const arrayLiterals = [
   "[null]",
   "[true, false]",
   "[0,1, 2,  3,\n4]",
-  '[["2 deep"]]',
+  "[[\"2 deep\"]]",
 ];
 
 const objectLiterals = [
   "{}",
-  '\n {\n "\\b"\n :\n""\n }\n ',
-  '{"":""}',
-  '{"1":{"2":"deep"}}',
+  "\n {\n \"\\b\"\n :\n\"\"\n }\n ",
+  "{\"\":\"\"}",
+  "{\"1\":{\"2\":\"deep\"}}",
 ];
 
-const parse = json => {
+const parse = (json) => {
   const p = parser();
   const sink = new TestListener(p);
   p.write(json);
@@ -156,7 +157,7 @@ for (const cases of literalCases) {
   });
 }
 
-describe(`string literal`, () => {
+describe("string literal", () => {
   for (const [description, json] of stringLiterals) {
       // Clarinet does not current support (null | boolean | number | string) as root value.
       // To work around this, we wrap the literal in an array before passing to 'test()'.
@@ -165,13 +166,13 @@ describe(`string literal`, () => {
   }
 });
 
-describe(`array literal`, () => {
+describe("array literal", () => {
   for (const json of arrayLiterals) {
     test(json);
   }
 });
 
-describe(`object literal`, () => {
+describe("object literal", () => {
   for (const json of objectLiterals) {
     test(json);
   }
