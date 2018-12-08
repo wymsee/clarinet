@@ -52,7 +52,7 @@ class TestListener {
   }
 
   reset() {
-    this.result = undefined;
+    this.result = void 0;
     this.previousStates = [];
     this.currentState = Object.freeze({ container: [], key: null });
   }

@@ -1,4 +1,4 @@
-// eslint-disable no-console
+/* eslint-disable no-console */
 const { Suite } = require("benchmark");
 const { Listener } = require("./listener");
 const clarinet = require("clarinet-last-published");
