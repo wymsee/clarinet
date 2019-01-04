@@ -2,12 +2,9 @@
   "use strict";
 
   // non node-js needs to set clarinet debug on root
-  var env
-    , fastlist
-    ;
-
-if(typeof process === 'object' && process.env) env = process.env;
-else env = window;
+  var env =(typeof process === 'object' && process.env)
+    ? process.env
+    : window;
 
   clarinet.parser            = function (opt) { return new CParser(opt);};
   clarinet.CParser           = CParser;
