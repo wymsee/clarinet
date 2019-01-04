@@ -1,13 +1,13 @@
 /* eslint-disable no-console */
 const { Suite } = require("benchmark");
 const { Listener } = require("./listener");
-const clarinet = require("clarinet-last-published");
-const mine = require("..");
+const oldClarinet = require("clarinet");
+const newClarinet = require("..");
 
-const oldParser = clarinet.parser();
+const oldParser = oldClarinet.parser();
 const oldListener = new Listener(oldParser);
 
-const newParser = mine.parser();
+const newParser = newClarinet.parser();
 const newListener = new Listener(newParser);
 
 const suites =
@@ -19,6 +19,7 @@ const suites =
 
 for (const { name, json } of suites) {
   new Suite("name")
+    // Uncomment the below to add node's native JSON parsing to the results:
     // .add(`native-${name}`, () => JSON.parse(json))
     .add(`old-${name}`, () => {
       oldListener.reset();
