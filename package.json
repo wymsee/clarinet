@@ -8,7 +8,7 @@
     "Roly Fentanes (http://about.me/roly)",
     "John Lancaster (http://jlank.com)"
   ],
-  "version": "0.12.2",
+  "version": "0.12.3",
   "main": "./clarinet.js",
   "homepage": "https://github.com/dscape/clarinet",
   "repository": {
@@ -40,7 +40,7 @@
   "scripts": {
     "test": "mocha -r should -t 10000 -s 2000 test/parser.spec.js test/clarinet.js test/npm.js test/utf8-chunks.js test/position.js",
     "bench": "cd benchmark && npm test",
-    "postinstall": "cd benchmark && npm i --ignore-scripts"
+    "prebench": "cd benchmark && test -e node_modules || npm i --ignore-scripts"
   },
   "engines": {
     "node": ">=0.3.6",
