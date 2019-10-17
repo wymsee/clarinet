@@ -4,7 +4,7 @@
   // non node-js needs to set clarinet debug on root
   var env =(typeof process === 'object' && process.env)
     ? process.env
-    : window;
+    : self;
 
   clarinet.parser            = function (opt) { return new CParser(opt);};
   clarinet.CParser           = CParser;
