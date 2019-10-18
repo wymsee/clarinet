@@ -23,4 +23,13 @@ parser.onend = function () {
   console.log('End');
 }
 
-parser.write('{ "firstName": "John", "lastName" : "Smith", "age" : 25, "address" : { "streetAddress": "21 2nd Street", "city" : "New York", "state" : "NY", "postalCode" : "10021" }, "phoneNumber": [ { "type" : "home", "number": "212 555-1234" }, { "type" : "fax", "number": "646 555-4567" } ] }').close();
+parser
+  .write('{ "firstName": "John", "lastName": ')
+  .write('"Smith", "age" : 25, "address" : { ')
+  .write('"streetAddress": "21 2nd Street", "')
+  .write('city" : "New York", "state" : "NY",')
+  .write('"postalCode" : "10021" }, "phoneNum')
+  .write('ber": [ { "type" : "home", "number"')
+  .write(': "212 555-1234" }, { "type" : "fax')
+  .write('", "number": "646 555-4567" } ] }')
+  .close();
