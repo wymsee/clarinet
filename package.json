@@ -1,5 +1,5 @@
 {
-  "name": "clarinet",
+  "name": "@synconset/clarinet",
   "description": "SAX based evented streaming JSON parser in JavaScript (browser and node)",
   "author": "Nuno Job <nunojobpinto@gmail.com> (http://nunojob.com/)",
   "contributors": [

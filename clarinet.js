@@ -188,8 +188,7 @@
     , close  : function () { return this.write(null); }
     };
 
-  try        { Stream = require("stream").Stream; }
-  catch (ex) { Stream = function () {}; }
+  Stream = function () {};
 
   function createStream (opt) { return new CStream(opt); }
 
